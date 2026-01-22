@@ -1,0 +1,31 @@
+---
+- name: Destroy OpenShift Cluster on vSphere
+  hosts: localhost
+  gather_facts: true
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  
+  tasks:
+    - name: Check if openshift-install binary exists
+      stat:
+        path: "{{ installer.binary_path }}"
+      register: openshift_install_binary
+    
+    - name: Destroy cluster using openshift-install
+      command: "{{ installer.binary_path }} destroy cluster --dir {{ installer.work_dir }}"
+      when:
+        - openshift_install_binary.stat.exists
+        - installer.work_dir is defined
+      register: destroy_result
+      changed_when: true
+    
+    - name: Display destroy result
+      debug:
+        var: destroy_result.stdout_lines
+      when: destroy_result is defined
+    
+    - name: Clean up work directory
+      file:
+        path: "{{ installer.work_dir }}"
+        state: absent
+      when: installer.work_dir is defined

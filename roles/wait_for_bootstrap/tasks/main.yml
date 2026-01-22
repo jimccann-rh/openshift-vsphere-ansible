@@ -1,0 +1,12 @@
+---
+- name: Wait for bootstrap to complete
+  command: "{{ installer.binary_path }} wait-for bootstrap-complete --dir {{ installer.work_dir }} --log-level debug"
+  register: bootstrap_wait
+  until: bootstrap_wait.rc == 0
+  retries: 60
+  delay: 60
+  changed_when: false
+
+- name: Display bootstrap completion status
+  debug:
+    var: bootstrap_wait.stdout_lines

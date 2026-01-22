@@ -1,0 +1,78 @@
+---
+- name: Create /usr/local/bin directory
+  file:
+    path: /usr/local/bin
+    state: directory
+    mode: '0755'
+
+- name: Check if openshift-install exists
+  stat:
+    path: "{{ installer.binary_path }}"
+  register: openshift_install_exists
+
+- name: Download openshift-install binary
+  get_url:
+    url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/{{ openshift_version }}/openshift-install-linux-{{ openshift_version }}.tar.gz"
+    dest: /tmp/openshift-install.tar.gz
+    mode: '0644'
+  when: not openshift_install_exists.stat.exists
+
+- name: Extract openshift-install binary
+  unarchive:
+    src: /tmp/openshift-install.tar.gz
+    dest: /tmp
+    remote_src: true
+  when: not openshift_install_exists.stat.exists
+
+- name: Install openshift-install binary
+  copy:
+    src: /tmp/openshift-install
+    dest: "{{ installer.binary_path }}"
+    mode: '0755'
+    remote_src: true
+  when: not openshift_install_exists.stat.exists
+
+- name: Check if oc CLI exists
+  stat:
+    path: /usr/local/bin/oc
+  register: oc_exists
+
+- name: Download oc CLI
+  get_url:
+    url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/{{ openshift_version }}/openshift-client-linux-{{ openshift_version }}.tar.gz"
+    dest: /tmp/oc.tar.gz
+    mode: '0644'
+  when: not oc_exists.stat.exists
+
+- name: Extract oc CLI
+  unarchive:
+    src: /tmp/oc.tar.gz
+    dest: /tmp
+    remote_src: true
+  when: not oc_exists.stat.exists
+
+- name: Install oc CLI
+  copy:
+    src: /tmp/oc
+    dest: /usr/local/bin/oc
+    mode: '0755'
+    remote_src: true
+  when: not oc_exists.stat.exists
+
+- name: Verify openshift-install version
+  command: "{{ installer.binary_path }} version"
+  register: openshift_install_version
+  changed_when: false
+
+- name: Display openshift-install version
+  debug:
+    var: openshift_install_version.stdout_lines
+
+- name: Verify oc version
+  command: /usr/local/bin/oc version --client
+  register: oc_version
+  changed_when: false
+
+- name: Display oc version
+  debug:
+    var: oc_version.stdout_lines

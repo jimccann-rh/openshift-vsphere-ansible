@@ -1,0 +1,23 @@
+---
+- name: Wait for installation to complete
+  command: "{{ installer.binary_path }} wait-for install-complete --dir {{ installer.work_dir }} --log-level debug"
+  register: install_wait
+  until: install_wait.rc == 0
+  retries: 120
+  delay: 60
+  changed_when: false
+
+- name: Display installation completion status
+  debug:
+    var: install_wait.stdout_lines
+
+- name: Verify cluster is operational
+  shell: |
+    export KUBECONFIG={{ installer.work_dir }}/auth/kubeconfig
+    oc get nodes
+  register: cluster_nodes
+  changed_when: false
+
+- name: Display cluster nodes
+  debug:
+    var: cluster_nodes.stdout_lines

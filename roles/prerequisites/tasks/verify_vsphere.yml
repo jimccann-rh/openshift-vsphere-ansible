@@ -1,0 +1,17 @@
+---
+- name: Test vSphere connectivity
+  uri:
+    url: "https://{{ vsphere.vcenter }}/sdk"
+    method: GET
+    status_code: [200, 301, 302, 401, 403]
+    validate_certs: false
+    timeout: 10
+  register: vsphere_connectivity
+  failed_when: false
+
+- name: Verify vSphere is reachable
+  assert:
+    that:
+      - vsphere_connectivity.status in [200, 301, 302, 401, 403]
+    fail_msg: "Cannot reach vSphere vCenter at {{ vsphere.vcenter }}"
+    success_msg: "vSphere vCenter is reachable at {{ vsphere.vcenter }}"

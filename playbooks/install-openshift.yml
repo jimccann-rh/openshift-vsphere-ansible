@@ -1,0 +1,53 @@
+---
+- name: Install OpenShift Container Platform on vSphere
+  hosts: localhost
+  gather_facts: true
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  
+  pre_tasks:
+    - name: Validate prerequisites
+      include_role:
+        name: prerequisites
+        tasks_from: validate
+  
+  roles:
+    - role: prerequisites
+      tags: [prerequisites, always]
+    
+    - role: vcenter_ssl_cert
+      tags: [vcenter_ssl, prerequisites, ssl]
+    
+    - role: install_config
+      tags: [install_config, config]
+    
+    - role: generate_manifests
+      tags: [manifests, config]
+    
+    - role: generate_ignition
+      tags: [ignition, config]
+    
+    - role: provision_vms
+      tags: [provision, vms]
+    
+    - role: wait_for_bootstrap
+      tags: [bootstrap, wait]
+    
+    - role: approve_csrs
+      tags: [csr, approve]
+    
+    - role: wait_for_install
+      tags: [install, wait]
+    
+    - role: post_install
+      tags: [post_install, config]
+
+  post_tasks:
+    - name: Display cluster information
+      debug:
+        msg:
+          - "OpenShift installation completed!"
+          - "API URL: https://api.{{ cluster_domain }}:6443"
+          - "Console URL: https://console-openshift-console.apps.{{ cluster_domain }}"
+          - "kubeadmin password: Check {{ installer.work_dir }}/auth/kubeadmin-password"
+          - "kubeconfig: {{ installer.work_dir }}/auth/kubeconfig"

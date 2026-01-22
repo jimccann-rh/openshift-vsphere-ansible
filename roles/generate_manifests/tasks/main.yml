@@ -1,0 +1,20 @@
+---
+- name: Generate manifests
+  command: "{{ installer.binary_path }} create manifests --dir {{ installer.work_dir }}"
+  args:
+    creates: "{{ installer.work_dir }}/manifests/cluster-config.yaml"
+  register: generate_manifests_result
+
+- name: Display manifest generation result
+  debug:
+    var: generate_manifests_result.stdout_lines
+
+- name: Verify manifests were created
+  find:
+    paths: "{{ installer.work_dir }}/manifests"
+    patterns: "*.yaml"
+  register: manifest_files
+
+- name: Display created manifest files
+  debug:
+    msg: "Created {{ manifest_files.files | length }} manifest files"

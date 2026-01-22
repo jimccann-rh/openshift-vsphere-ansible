@@ -1,0 +1,53 @@
+---
+- name: Set kubeconfig
+  set_fact:
+    kubeconfig: "{{ installer.work_dir }}/auth/kubeconfig"
+
+- name: Verify cluster operators
+  shell: |
+    export KUBECONFIG={{ kubeconfig }}
+    oc get clusteroperators
+  register: cluster_operators
+  changed_when: false
+
+- name: Display cluster operators status
+  debug:
+    var: cluster_operators.stdout_lines
+
+- name: Get cluster version
+  shell: |
+    export KUBECONFIG={{ kubeconfig }}
+    oc get clusterversion
+  register: cluster_version
+  changed_when: false
+
+- name: Display cluster version
+  debug:
+    var: cluster_version.stdout_lines
+
+- name: Get cluster info
+  shell: |
+    export KUBECONFIG={{ kubeconfig }}
+    oc cluster-info
+  register: cluster_info
+  changed_when: false
+
+- name: Display cluster info
+  debug:
+    var: cluster_info.stdout_lines
+
+- name: Save installation summary
+  copy:
+    content: |
+      OpenShift Installation Summary
+      =============================
+      Cluster Name: {{ cluster_name }}
+      Base Domain: {{ base_domain }}
+      API URL: https://api.{{ cluster_domain }}:6443
+      Console URL: https://console-openshift-console.apps.{{ cluster_domain }}
+      kubeconfig: {{ kubeconfig }}
+      kubeadmin password: {{ installer.work_dir }}/auth/kubeadmin-password
+      
+      Installation completed at: {{ ansible_date_time.iso8601 }}
+    dest: "{{ installer.work_dir }}/installation-summary.txt"
+    mode: '0644'

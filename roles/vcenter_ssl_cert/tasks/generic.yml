@@ -1,0 +1,61 @@
+---
+- name: Download vCenter SSL certificate (Generic)
+  uri:
+    url: "https://{{ vsphere.vcenter }}:{{ vcenter_ssl.port | default(443) }}"
+    method: GET
+    validate_certs: false
+    timeout: "{{ vcenter_ssl.timeout | default(30) }}"
+  register: vcenter_cert_fetch
+  failed_when: false
+  changed_when: false
+
+- name: Extract certificate from connection
+  shell: |
+    echo | openssl s_client -showcerts -connect {{ vsphere.vcenter }}:{{ vcenter_ssl.port | default(443) }} 2>/dev/null | \
+    openssl x509 -outform PEM > /tmp/{{ vcenter_ssl.cert_file }}
+  args:
+    creates: "/tmp/{{ vcenter_ssl.cert_file }}"
+  register: cert_extract
+  changed_when: cert_extract.rc == 0
+
+- name: Verify certificate was extracted
+  stat:
+    path: "/tmp/{{ vcenter_ssl.cert_file }}"
+  register: cert_file_stat
+
+- name: Fail if certificate extraction failed
+  fail:
+    msg: "Failed to extract vCenter SSL certificate"
+  when: not cert_file_stat.stat.exists
+
+- name: Display certificate information
+  command: openssl x509 -in /tmp/{{ vcenter_ssl.cert_file }} -noout -subject -issuer -dates
+  register: cert_info
+  changed_when: false
+
+- name: Show certificate details
+  debug:
+    msg: "{{ cert_info.stdout_lines }}"
+
+- name: Create certificate directory
+  file:
+    path: "{{ vcenter_ssl.cert_dir }}"
+    state: directory
+    mode: '0755'
+  when: vcenter_ssl.cert_dir is defined
+
+- name: Copy certificate to system trust store
+  copy:
+    src: "/tmp/{{ vcenter_ssl.cert_file }}"
+    dest: "{{ vcenter_ssl.cert_path }}"
+    mode: '0644'
+    remote_src: true
+
+- name: Update certificate trust store (Generic - manual instructions)
+  debug:
+    msg:
+      - "Certificate installed to {{ vcenter_ssl.cert_path }}"
+      - "Please update your system's certificate trust store manually"
+      - "For RHEL/CentOS: update-ca-trust"
+      - "For Ubuntu/Debian: update-ca-certificates"
+      - "For SUSE: update-ca-certificates"

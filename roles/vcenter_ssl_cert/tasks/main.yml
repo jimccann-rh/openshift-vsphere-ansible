@@ -1,0 +1,27 @@
+---
+- name: Check if vCenter SSL certificate installation is enabled
+  set_fact:
+    install_vcenter_cert: "{{ vcenter_ssl.enabled | default(true) }}"
+
+- name: Set OS-specific task file
+  set_fact:
+    os_task_file: "{{ ansible_os_family | lower }}.yml"
+  when: install_vcenter_cert
+
+- name: Check if OS-specific task file exists
+  stat:
+    path: "{{ role_path }}/tasks/{{ os_task_file }}"
+  register: os_task_file_stat
+  when: install_vcenter_cert
+
+- name: Include OS-specific certificate installation tasks
+  include_tasks: "{{ os_task_file }}"
+  when:
+    - install_vcenter_cert
+    - os_task_file_stat.stat.exists
+
+- name: Fallback to generic certificate installation
+  include_tasks: generic.yml
+  when:
+    - install_vcenter_cert
+    - not os_task_file_stat.stat.exists | default(false)

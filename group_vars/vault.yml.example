@@ -1,0 +1,6 @@
+---
+# Example Ansible Vault file
+# Copy this to vault.yml and encrypt with: ansible-vault encrypt vault.yml
+# Edit with: ansible-vault edit vault.yml
+
+vault_vsphere_password: "your-vsphere-password-here"

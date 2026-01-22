@@ -1,0 +1,67 @@
+---
+- name: Install ca-certificates package (Ubuntu/Debian)
+  apt:
+    name: ca-certificates
+    state: present
+    update_cache: yes
+
+- name: Download vCenter SSL certificate (Ubuntu/Debian)
+  shell: |
+    echo | openssl s_client -showcerts -connect {{ vsphere.vcenter }}:{{ vcenter_ssl.port | default(443) }} 2>/dev/null | \
+    openssl x509 -outform PEM > /tmp/{{ vcenter_ssl.cert_file }}
+  args:
+    creates: "/tmp/{{ vcenter_ssl.cert_file }}"
+  register: cert_extract
+  changed_when: cert_extract.rc == 0
+
+- name: Verify certificate was extracted
+  stat:
+    path: "/tmp/{{ vcenter_ssl.cert_file }}"
+  register: cert_file_stat
+
+- name: Fail if certificate extraction failed
+  fail:
+    msg: "Failed to extract vCenter SSL certificate"
+  when: not cert_file_stat.stat.exists
+
+- name: Display certificate information
+  command: openssl x509 -in /tmp/{{ vcenter_ssl.cert_file }} -noout -subject -issuer -dates
+  register: cert_info
+  changed_when: false
+
+- name: Show certificate details
+  debug:
+    msg: "{{ cert_info.stdout_lines }}"
+
+- name: Create certificate directory (Ubuntu/Debian)
+  file:
+    path: "{{ vcenter_ssl.cert_dir_ubuntu }}"
+    state: directory
+    mode: '0755'
+
+- name: Copy certificate to system trust store (Ubuntu/Debian)
+  copy:
+    src: "/tmp/{{ vcenter_ssl.cert_file }}"
+    dest: "{{ vcenter_ssl.cert_dir_ubuntu }}/{{ vcenter_ssl.cert_file }}"
+    mode: '0644'
+    remote_src: true
+
+- name: Update certificate trust store (Ubuntu/Debian)
+  command: update-ca-certificates
+  changed_when: true
+
+- name: Verify certificate is in trust store
+  command: openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt /tmp/{{ vcenter_ssl.cert_file }}
+  register: cert_verify
+  changed_when: false
+  failed_when: false
+
+- name: Display certificate verification result
+  debug:
+    msg: "Certificate verification: {{ cert_verify.stdout }}"
+  when: cert_verify.rc == 0
+
+- name: Clean up temporary certificate file
+  file:
+    path: "/tmp/{{ vcenter_ssl.cert_file }}"
+    state: absent

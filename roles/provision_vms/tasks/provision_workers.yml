@@ -1,0 +1,65 @@
+---
+- name: Read worker ignition config
+  slurp:
+    src: "{{ installer.work_dir }}/worker.ign"
+  register: worker_ignition
+
+- name: Provision worker nodes
+  vmware_guest:
+    hostname: "{{ vsphere.vcenter }}"
+    username: "{{ vsphere.username }}"
+    password: "{{ vsphere.password }}"
+    validate_certs: false
+    name: "{{ item.name }}"
+    template: "{{ vsphere.template }}"
+    datacenter: "{{ vsphere.datacenter }}"
+    folder: "{{ vsphere.folder }}"
+    cluster: "{{ vsphere.cluster }}"
+    datastore: "{{ vsphere.datastore }}"
+    resource_pool: "{{ vsphere.resource_pool | default('') }}"
+    state: present
+    hardware:
+      memory_mb: "{{ vsphere.vm.memory }}"
+      num_cpus: "{{ vsphere.vm.cpu }}"
+      scsi: "{{ vsphere.vm.scsi_controller }}"
+    disk:
+      - size_gb: "{{ vsphere.disk.size }}"
+        type: "{{ 'thin' if vsphere.disk.thin_provisioned else 'thick' }}"
+    networks:
+      - name: "{{ vsphere.network }}"
+        device_type: "{{ vsphere.network_adapter.type }}"
+        ip: "{{ item.ip }}"
+        netmask: "{{ vsphere.ip_config.netmask if vsphere.ip_config.enabled else '' }}"
+        gateway: "{{ vsphere.ip_config.gateway if vsphere.ip_config.enabled else '' }}"
+    customization:
+      hostname: "{{ item.name }}"
+      dns_servers: "{{ vsphere.ip_config.dns_servers if vsphere.ip_config.enabled else [] }}"
+    wait_for_ip_address: true
+    wait_for_customization: true
+  register: worker_vms
+  loop: "{{ workers }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Power on worker VMs
+  vmware_guest_powerstate:
+    hostname: "{{ vsphere.vcenter }}"
+    username: "{{ vsphere.username }}"
+    password: "{{ vsphere.password }}"
+    validate_certs: false
+    name: "{{ item.name }}"
+    state: powered-on
+  loop: "{{ workers }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Wait for worker VMs to be ready
+  wait_for:
+    host: "{{ item.ip }}"
+    port: 22
+    delay: 30
+    timeout: 600
+  loop: "{{ workers }}"
+  when: item.ip is defined
+  loop_control:
+    label: "{{ item.name }}"

@@ -1,0 +1,10 @@
+---
+- name: Provision bootstrap node
+  include_tasks: provision_bootstrap.yml
+  when: bootstrap is defined
+
+- name: Provision control plane nodes
+  include_tasks: provision_masters.yml
+
+- name: Provision compute nodes
+  include_tasks: provision_workers.yml

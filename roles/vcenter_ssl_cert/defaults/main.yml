@@ -1,0 +1,16 @@
+---
+# vCenter SSL Certificate Configuration
+vcenter_ssl:
+  enabled: true
+  port: 443
+  cert_dir: "/etc/pki/ca-trust/source/anchors"
+  cert_file: "vcenter-{{ vsphere.vcenter | replace('.', '-') }}.crt"
+  cert_path: "{{ vcenter_ssl.cert_dir }}/{{ vcenter_ssl.cert_file }}"
+  # Alternative cert locations for different OS
+  cert_dir_ubuntu: "/usr/local/share/ca-certificates"
+  cert_dir_redhat: "/etc/pki/ca-trust/source/anchors"
+  cert_dir_suse: "/etc/pki/trust/anchors"
+  
+  # Certificate validation
+  verify_cert: false  # Set to true to verify certificate chain
+  timeout: 30

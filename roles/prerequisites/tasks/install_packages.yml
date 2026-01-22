@@ -1,0 +1,37 @@
+---
+- name: Install required packages (RedHat/CentOS/Fedora)
+  package:
+    name:
+      - python3
+      - python3-pip
+      - git
+      - jq
+      - unzip
+      - wget
+      - curl
+      - openssl
+    state: present
+  when: ansible_pkg_mgr in ['yum', 'dnf']
+
+- name: Install required packages (Ubuntu/Debian)
+  apt:
+    name:
+      - python3
+      - python3-pip
+      - git
+      - jq
+      - unzip
+      - wget
+      - curl
+      - openssl
+    state: present
+    update_cache: yes
+  when: ansible_pkg_mgr == 'apt'
+
+- name: Install Python dependencies
+  pip:
+    name:
+      - pyvmomi
+      - requests
+    state: present
+    executable: pip3

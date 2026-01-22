@@ -1,0 +1,49 @@
+# Ansible
+*.retry
+.vault_pass
+group_vars/vault.yml
+host_vars/*/vault.yml
+
+# OpenShift installer
+/tmp/openshift-install*
+/tmp/oc*
+*.ign
+install-config.yaml
+install-config.yaml.backup
+
+# Work directories
+/tmp/openshift-install-*/
+
+# SSH keys
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# Pull secrets
+pull-secret.json
+*.pull-secret
+
+# Logs
+*.log
+ansible.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

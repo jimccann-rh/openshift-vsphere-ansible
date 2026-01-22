@@ -1,0 +1,12 @@
+---
+- name: Include validation tasks
+  include_tasks: validate.yml
+
+- name: Install required packages
+  include_tasks: install_packages.yml
+
+- name: Install OpenShift CLI tools
+  include_tasks: install_tools.yml
+
+- name: Verify vSphere connectivity
+  include_tasks: verify_vsphere.yml

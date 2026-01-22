@@ -1,0 +1,24 @@
+---
+- name: Generate ignition configs
+  command: "{{ installer.binary_path }} create ignition-configs --dir {{ installer.work_dir }}"
+  args:
+    creates: "{{ installer.work_dir }}/auth/kubeadmin-password"
+  register: generate_ignition_result
+
+- name: Display ignition generation result
+  debug:
+    var: generate_ignition_result.stdout_lines
+
+- name: Verify ignition configs were created
+  find:
+    paths: "{{ installer.work_dir }}"
+    patterns: "*.ign"
+  register: ignition_files
+
+- name: Display created ignition files
+  debug:
+    msg: "Created {{ ignition_files.files | length }} ignition files"
+
+- name: Display kubeadmin password location
+  debug:
+    msg: "kubeadmin password saved to {{ installer.work_dir }}/auth/kubeadmin-password"

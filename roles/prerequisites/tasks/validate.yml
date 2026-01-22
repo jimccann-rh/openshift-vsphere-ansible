@@ -1,0 +1,47 @@
+---
+- name: Check if running on supported OS
+  assert:
+    that:
+      - ansible_distribution in ['RedHat', 'CentOS', 'Fedora', 'Ubuntu', 'Debian']
+    fail_msg: "Unsupported operating system: {{ ansible_distribution }}"
+    success_msg: "OS check passed: {{ ansible_distribution }}"
+
+- name: Check Python version
+  assert:
+    that:
+      - ansible_python_version is version('3.6', '>=')
+    fail_msg: "Python 3.6 or higher is required. Current version: {{ ansible_python_version }}"
+    success_msg: "Python version check passed: {{ ansible_python_version }}"
+
+- name: Validate required variables
+  assert:
+    that:
+      - cluster_name is defined
+      - base_domain is defined
+      - vsphere.vcenter is defined
+      - vsphere.username is defined
+      - vsphere.password is defined
+      - pull_secret_path is defined
+    fail_msg: "One or more required variables are not defined"
+    success_msg: "All required variables are defined"
+
+- name: Check if pull secret file exists
+  stat:
+    path: "{{ pull_secret_path | expanduser }}"
+  register: pull_secret_file
+
+- name: Fail if pull secret does not exist
+  fail:
+    msg: "Pull secret file not found at {{ pull_secret_path }}"
+  when: not pull_secret_file.stat.exists
+
+- name: Validate pull secret is valid JSON
+  command: python3 -m json.tool "{{ pull_secret_path | expanduser }}"
+  register: pull_secret_validation
+  changed_when: false
+  failed_when: false
+
+- name: Fail if pull secret is invalid
+  fail:
+    msg: "Pull secret file is not valid JSON"
+  when: pull_secret_validation.rc != 0

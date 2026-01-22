@@ -1,0 +1,133 @@
+---
+# OpenShift Installation Configuration
+openshift_version: "4.18"
+openshift_release_image: "quay.io/openshift-release-dev/ocp-release:{{ openshift_version }}.0-x86_64"
+
+# Cluster Configuration
+cluster_name: "ocp-cluster"
+base_domain: "example.com"
+cluster_domain: "{{ cluster_name }}.{{ base_domain }}"
+
+# Pull Secret (should be stored in vault or separate file)
+# pull_secret: "{{ lookup('file', '~/.openshift/pull-secret.json') }}"
+pull_secret_path: "~/.openshift/pull-secret.json"
+
+# vSphere Configuration
+vsphere:
+  vcenter: "vcenter.example.com"
+  username: "administrator@vsphere.local"
+  password: "{{ vault_vsphere_password }}"
+  datacenter: "Datacenter"
+  cluster: "Cluster"
+  datastore: "datastore1"
+  network: "VM Network"
+  folder: "/Datacenter/vm/OpenShift"
+  
+  # Resource Pools
+  resource_pool: ""
+  
+  # Disk Configuration
+  disk:
+    size: "120"
+    thin_provisioned: true
+  
+  # VM Configuration
+  vm:
+    cpu: 4
+    memory: 16384  # 16GB in MB
+    guest_id: "rhel8_64Guest"
+    scsi_controller: "pvscsi"
+    firmware: "efi"
+  
+  # Network Configuration
+  network_adapter:
+    type: "vmxnet3"
+  
+  # Template Configuration
+  template: "rhel8-template"  # RHEL 8 template name in vSphere
+  
+  # IP Configuration (for static IP assignment)
+  ip_config:
+    enabled: false
+    gateway: "192.168.1.1"
+    netmask: "255.255.255.0"
+    dns_servers:
+      - "8.8.8.8"
+      - "8.8.4.4"
+
+# vCenter SSL Certificate Configuration
+vcenter_ssl:
+  enabled: true  # Set to false to skip certificate installation
+  port: 443  # vCenter HTTPS port
+  # Certificate will be automatically installed to system trust store
+  # Supported OS: RHEL/CentOS, Ubuntu/Debian, SUSE
+
+# Bootstrap Node Configuration
+bootstrap:
+  name: "{{ cluster_name }}-bootstrap"
+  ip: "192.168.1.10"
+  mac_address: ""  # Optional: for static IP assignment
+
+# Control Plane (Master) Nodes Configuration
+masters:
+  - name: "{{ cluster_name }}-master-0"
+    ip: "192.168.1.11"
+    mac_address: ""
+  - name: "{{ cluster_name }}-master-1"
+    ip: "192.168.1.12"
+    mac_address: ""
+  - name: "{{ cluster_name }}-master-2"
+    ip: "192.168.1.13"
+    mac_address: ""
+
+# Compute (Worker) Nodes Configuration
+workers:
+  - name: "{{ cluster_name }}-worker-0"
+    ip: "192.168.1.21"
+    mac_address: ""
+  - name: "{{ cluster_name }}-worker-1"
+    ip: "192.168.1.22"
+    mac_address: ""
+
+# OpenShift Installer Configuration
+installer:
+  binary_path: "/usr/local/bin/openshift-install"
+  binary_version: "{{ openshift_version }}"
+  work_dir: "/tmp/openshift-install-{{ cluster_name }}"
+  install_config_dir: "{{ installer.work_dir }}/install-config"
+  
+# SSH Key Configuration
+ssh_key_path: "~/.ssh/id_rsa.pub"
+ssh_private_key_path: "~/.ssh/id_rsa"
+
+# Proxy Configuration (if needed)
+proxy:
+  enabled: false
+  http_proxy: ""
+  https_proxy: ""
+  no_proxy: "localhost,127.0.0.1,.svc,.cluster.local"
+
+# Additional Trust Bundle (if needed)
+additional_trust_bundle: ""
+
+# Feature Gates (optional)
+feature_gates: []
+
+# Network Configuration
+network_type: "OVNKubernetes"  # or "OpenShiftSDN"
+network_cidr: "10.128.0.0/14"
+service_network_cidr: "172.30.0.0/16"
+cluster_network_host_prefix: 23
+
+# Machine Config Pool
+machine_config_pool:
+  enabled: true
+
+# Registry Configuration
+registry:
+  mirror: false
+  mirror_registry: ""
+
+# Bastion Host Configuration
+bastion_host: "192.168.1.100"
+bastion_user: "root"

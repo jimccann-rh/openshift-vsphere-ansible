@@ -1,0 +1,40 @@
+---
+all:
+  children:
+    bastion:
+      hosts:
+        bastion:
+          ansible_host: "{{ bastion_host }}"
+          ansible_user: "{{ bastion_user | default('root') }}"
+    
+    bootstrap:
+      hosts:
+        bootstrap:
+          ansible_host: "{{ bootstrap_host | default('') }}"
+          ansible_user: "{{ bootstrap_user | default('core') }}"
+    
+    control_plane:
+      hosts:
+        master-0:
+          ansible_host: "{{ master_0_host | default('') }}"
+          ansible_user: "{{ master_user | default('core') }}"
+        master-1:
+          ansible_host: "{{ master_1_host | default('') }}"
+          ansible_user: "{{ master_user | default('core') }}"
+        master-2:
+          ansible_host: "{{ master_2_host | default('') }}"
+          ansible_user: "{{ master_user | default('core') }}"
+    
+    compute:
+      hosts:
+        worker-0:
+          ansible_host: "{{ worker_0_host | default('') }}"
+          ansible_user: "{{ worker_user | default('core') }}"
+        worker-1:
+          ansible_host: "{{ worker_1_host | default('') }}"
+          ansible_user: "{{ worker_user | default('core') }}"
+    
+    localhost:
+      hosts:
+        localhost:
+          ansible_connection: local
